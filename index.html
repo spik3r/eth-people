@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+    <script src="./web3.min.js"></script>
+
+</head>
+<body>
+<div class="container">
+
+    <h1>Eth People</h1>
+
+    <div>
+        <span>Number of People: </span>
+        <span id="num-people"></span>
+        <button id="getNumberOfPeopleButton">Get Number of People</button>
+    </div>
+
+    <div>
+        <label for="person">Person to get</label>
+        <input id="person" type="number" value=0>
+        <button id="getPersonButton">Get Person</button>
+        <h3><span id="the-person"></span></h3>
+    </div>
+
+
+    <div>
+
+
+        <label for="name">Person Name</label>
+        <input id="name" type="text">
+        <br/>
+        <label for="name">Person Age</label>
+        <input id="age" type="text">
+        <br/>
+        <button id="button">Add Person</button>
+    </div>
+
+    <div>
+        <label for="address">Eth Address</label>
+        <input id="address" type="text" value="">
+        <br/>
+        <span id="output">...</span>
+        <button id="getBalanceButton">Get Balance</button>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+
+
+<script>
+    const ETH_ADDRESS = "0x2F239C31F1e8cfFC4a954482a451E71AcB158036";      //Todo: change this to your address from Ganache
+    document.getElementById("address").value = ETH_ADDRESS;
+    const CONTRACT_NETWORK = "0xc7340c426f25a8b9ba2254c35730aecb90b4a40e"; //Todo: find by calling truffle networks
+    const ABI = [                                                          //Todo: if you change the contract replace from build folder after truffle compile
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "people",
+            "outputs": [
+                {
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "name": "age",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_name",
+                    "type": "string"
+                },
+                {
+                    "name": "_age",
+                    "type": "uint256"
+                }
+            ],
+            "name": "createPerson",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "id",
+                    "type": "uint256"
+                }
+            ],
+            "name": "getPerson",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "getNumberOfPeople",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ];
+
+    if (typeof web3 !== 'undefined') {
+        web3 = new Web3(web3.currentProvider);
+    } else {
+        // set the provider you want from Web3.providers
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
+    }
+    web3.eth.defaultAccount = web3.eth.accounts[0];
+    var PersonContract = web3.eth.contract(ABI);
+    var Person = PersonContract.at(CONTRACT_NETWORK);
+    console.log("Person: ");
+    console.log(Person);
+
+    $("#button").click(function() {
+        addPerson();
+    });
+    $("#getPersonButton").click(function() {
+        getPerson();
+    });
+    $("#getNumberOfPeopleButton").click(function() {
+        getNumberOfPeople();
+    });
+    $("#getBalanceButton").click(function() {
+        getBalance();
+    });
+
+
+    async function getNumberOfPeople() {
+        Person.getNumberOfPeople(function(error, result){
+            if(!error)
+            {
+                $("#num-people").html(result + ' people');
+                console.log("getNumberOfPeople: " + result);
+            }
+            else
+                console.error(error);
+        });
+    }
+
+    async function getPerson() {
+        Person.getPerson($("#person").val(), function(error, result){
+            if(!error)
+            {
+                console.log("getting: " + $("#person").val());
+                $("#the-person").html(result[0]+' ('+result[1]+' years old)');
+                console.log("getPerson: " + result);
+            }
+            else
+                console.error(error);
+        });
+    }
+
+    async function addPerson() {
+        Person.createPerson($("#name").val(), $("#age").val(), function(err, transactionHash) {
+            if (!err)
+                console.log(transactionHash);
+        });
+    }
+
+    const promisify = (inner) =>
+        new Promise((resolve, reject) =>
+            inner((err, res) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(res);
+                }
+            })
+        );
+
+    async function getBalance() {
+        var address, wei, balance
+        address = document.getElementById("address").value;
+        wei = promisify(cb => web3.eth.getBalance(address, cb))
+        try {
+            balance = web3.fromWei(await wei, 'ether')
+            document.getElementById("output").innerHTML = balance + " ETH";
+        } catch (error) {
+            document.getElementById("output").innerHTML = error;
+        }
+    }
+
+</script>
+
+</body>
+</html>
