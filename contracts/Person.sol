@@ -2,7 +2,6 @@ pragma solidity ^0.4.17;
 pragma experimental ABIEncoderV2;
 
 contract Person {
-
     struct Person {
         string name;
         uint age;
@@ -15,7 +14,7 @@ contract Person {
     }
 
     function getPerson(uint id) public constant returns (string, uint) {
-        Person person = people[id];
+        Person storage person = people[id];
         return (person.name, person.age);
     }
 

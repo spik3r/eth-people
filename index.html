@@ -42,6 +42,34 @@
         <button id="button">Add Person</button>
     </div>
 
+    <h2>Eth Cars</h2>
+    <div>
+        <span>Number of Cars: </span>
+        <span id="num-cars"></span>
+        <button id="getNumberOfCarsButton">Get Number of Cars</button>
+    </div>
+
+    <div>
+        <label for="car">Car to get</label>
+        <input id="car" type="number" value=0>
+        <button id="getCarButton">Get Car</button>
+        <h3><span id="the-car"></span></h3>
+    </div>
+
+
+    <div>
+        <label for="make">Car Make</label>
+        <input id="make" type="text">
+        <br/>
+        <label for="model">Car Model</label>
+        <input id="model" type="text">
+        <br/>
+        <label for="horsePower">Car HorsePower</label>
+        <input id="horsePower" type="text">
+        <br/>
+        <button id="addCar">Add Car</button>
+    </div>
+
     <div>
         <label for="address">Eth Address</label>
         <input id="address" type="text" value="">
@@ -57,8 +85,9 @@
 <script>
     const ETH_ADDRESS = "0x2F239C31F1e8cfFC4a954482a451E71AcB158036";      //Todo: change this to your address from Ganache
     document.getElementById("address").value = ETH_ADDRESS;
-    const CONTRACT_NETWORK = "0xc7340c426f25a8b9ba2254c35730aecb90b4a40e"; //Todo: find by calling truffle networks
-    const ABI = [                                                          //Todo: if you change the contract replace from build folder after truffle compile
+    const CONTRACT_NETWORK = "0xd90cd779d0f5e4b8dfbdd2de10c219619ae8953c"; //Todo: find by calling truffle networks (Person)
+    const CAR_CONTRACT_NETWORK = "0x99c2bb2320b90fb54f79da9174aeae004eb2d754"; //Todo: find by calling truffle networks (Car)
+    const ABI = [
         {
             "constant": true,
             "inputs": [
@@ -139,6 +168,99 @@
         }
     ];
 
+    CAR_ABI = [
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "cars",
+            "outputs": [
+                {
+                    "name": "model",
+                    "type": "string"
+                },
+                {
+                    "name": "make",
+                    "type": "string"
+                },
+                {
+                    "name": "horsePower",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_model",
+                    "type": "string"
+                },
+                {
+                    "name": "_make",
+                    "type": "string"
+                },
+                {
+                    "name": "_horsePower",
+                    "type": "uint256"
+                }
+            ],
+            "name": "createCar",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "id",
+                    "type": "uint256"
+                }
+            ],
+            "name": "getCar",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string"
+                },
+                {
+                    "name": "",
+                    "type": "string"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "getNumberOfCars",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        }
+    ];
+
     if (typeof web3 !== 'undefined') {
         web3 = new Web3(web3.currentProvider);
     } else {
@@ -147,28 +269,47 @@
     }
     web3.eth.defaultAccount = web3.eth.accounts[0];
     var PersonContract = web3.eth.contract(ABI);
+    var CarContract = web3.eth.contract(CAR_ABI);
     var Person = PersonContract.at(CONTRACT_NETWORK);
+    var Car = CarContract.at(CAR_CONTRACT_NETWORK);
+    console.log("web3.eth.defaultAccount: ");
+    console.log(web3.eth.defaultAccount);
+    // web3.eth.getAccounts(accounts => console.log(accounts[0]));
+
     console.log("Person: ");
     console.log(Person);
 
-    $("#button").click(function() {
+    console.log("Car: ");
+    console.log(Car);
+
+    $("#button").click(function () {
         addPerson();
     });
-    $("#getPersonButton").click(function() {
+    $("#getPersonButton").click(function () {
         getPerson();
     });
-    $("#getNumberOfPeopleButton").click(function() {
+    $("#getNumberOfPeopleButton").click(function () {
         getNumberOfPeople();
     });
-    $("#getBalanceButton").click(function() {
+
+    $("#addCar").click(function () {
+        addCar();
+    });
+    $("#getCarButton").click(function () {
+        getCar();
+    });
+    $("#getNumberOfCarsButton").click(function () {
+        getNumberOfCars();
+    });
+
+    $("#getBalanceButton").click(function () {
         getBalance();
     });
 
 
     async function getNumberOfPeople() {
-        Person.getNumberOfPeople(function(error, result){
-            if(!error)
-            {
+        Person.getNumberOfPeople(function (error, result) {
+            if (!error) {
                 $("#num-people").html(result + ' people');
                 console.log("getNumberOfPeople: " + result);
             }
@@ -177,12 +318,22 @@
         });
     }
 
+    async function getNumberOfCars() {
+        Car.getNumberOfCars(function (error, result) {
+            if (!error) {
+                $("#num-cars").html(result + ' cars');
+                console.log("getNumberOfCars: " + result);
+            }
+            else
+                console.error(error);
+        });
+    }
+
     async function getPerson() {
-        Person.getPerson($("#person").val(), function(error, result){
-            if(!error)
-            {
+        Person.getPerson($("#person").val(), function (error, result) {
+            if (!error) {
                 console.log("getting: " + $("#person").val());
-                $("#the-person").html(result[0]+' ('+result[1]+' years old)');
+                $("#the-person").html(result[0] + ' (' + result[1] + ' years old)');
                 console.log("getPerson: " + result);
             }
             else
@@ -190,10 +341,32 @@
         });
     }
 
+    async function getCar() {
+        Car.getCar($("#car").val(), function (error, result) {
+            if (!error) {
+                console.log("getting: " + $("#car").val());
+                $("#the-car").html('Make: ' + result[0] + ' Model: ' + result[1] + ' Horse Power: ' + result[2]);
+                console.log("getCar: " + result);
+            }
+            else
+                console.error(error);
+        });
+    }
+
     async function addPerson() {
-        Person.createPerson($("#name").val(), $("#age").val(), function(err, transactionHash) {
+        Person.createPerson($("#name").val(), $("#age").val(), function (err, transactionHash) {
             if (!err)
                 console.log(transactionHash);
+        });
+    }
+
+    async function addCar() {
+        Car.createCar($("#make").val(), $("#model").val(), $("#horsePower").val(), function (err, transactionHash) {
+            if (!err) {
+                console.log(transactionHash);
+            } else {
+                console.log("addCar errr: " + err);
+            }
         });
     }
 
